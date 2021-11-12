@@ -84,3 +84,57 @@ async function cmcMetadata(symbol, contractAddr) {
 }
 
 module.exports = { parseKucoinLink, cmcListing, cmcMetadata };
+
+/**
+ * Parse cake title to get coin symbol and contract address.
+ * @param {string} title 
+ * @param {string} content 
+ */
+module.exports.parseCakeTitle = function parseCakeTitle(title, content) {
+	let symbol = '';
+	let contractAddr = '';
+	let start = title.indexOf('(');
+	let end = title.indexOf(')');
+	if(start > 0 && end > start) {
+		symbol = title.substring(start + 1, end).trim();
+	} else {
+		let t2 = title.toUpperCase();
+		end = t2.indexOf('-BNB');
+		if(end <= 0) {
+			end = t2.indexOf('-BUSD');
+		}
+		if (end > 0) {
+			start = t2.substring(0, end).lastIndexOf(' ');
+		}
+		if(start > 0 && end > start) {
+			symbol = title.substring(start, end).trim();
+		}
+	}
+
+	let cnt = content.toUpperCase();
+	start = cnt.lastIndexOf('FOOD POISONING');
+	if(start > 0) {
+		cnt = content.substring(start).toLowerCase();
+		start = cnt.lastIndexOf('https://www.bscscan.com/token/');
+		if(start > 0 && cnt.length > start + 30 + 42) {
+			contractAddr = cnt.substring(start + 30, start + 30 + 42);
+		}
+	}
+	
+	if(contractAddr == '') {
+		let ar = content.toLowerCase().split(`https://www.bscscan.com/token/`);
+		if(ar) {
+			ar.forEach(element => {
+				if(element.startsWith('0x') && element.length >= 42) {
+					let newA = element.substring(0,41);
+					if(contractAddr.indexOf(newA) < 0) {
+						contractAddr += `${element.substring(0,41)},`
+					}
+				}
+			});
+		}
+	}
+
+	return {symbol, contractAddr}
+}
+
