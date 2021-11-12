@@ -1,0 +1,32 @@
+{
+  "name": "cex-listing",
+  "version": "1.1.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "start": "node .",
+    "schedule": "node schedule.js"
+  },
+  "repository": {
+    "url": "git@github.com:CodeBase-VN/binance-news.git"
+  },
+  "keywords": [
+    "pancakeswap",
+    "pancake"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^10.0.0",
+    "fs-extra": "^10.0.0",
+    "level": "^7.0.1",
+    "node-schedule": "^2.0.0",
+    "open": "^8.4.0",
+    "puppeteer": "^10.4.0",
+    "request": "^2.88.2",
+    "request-promise": "^4.2.6",
+    "sound-play": "^1.1.0",
+    "telegraf": "^4.4.2",
+    "winston": "^3.3.3"
+  }
+}
