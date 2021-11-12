@@ -61,7 +61,7 @@ async function test(params) {
     //         await db.put(c.id, c);
     //     }
         
-    // });
+    // }); 
 
         // try {
         //     await db.get(123);    

@@ -11,7 +11,7 @@ const { r, log, logD, device, r58 } = require('./src/helpers');
 //DB
 const level = require('level');
 const db = level('db');
-// const dbCMC = level('dbcmc');
+// const dbCMC = level('dbcmc'); 
 
 //Sound
 const sound = require('sound-play');
@@ -203,10 +203,10 @@ async function check4newArticleKucoin() {
         let { link, ticker } = CntUtils.parseKucoinLink(item);
         try {
             await db.get(link);
-            if(played == false) {
-                console.log(`value ${a.b.c}`);
-                let a = 3/0;
-            }
+            // if(played == false) {
+            //     console.log(`value ${a.b.c}`);
+            //     let a = 3/0;
+            // }
         } catch {
             let url = 'https://www.kucoin.com/news/en-' + link;
             logger.info(`Kucoin new article: ${url}`);

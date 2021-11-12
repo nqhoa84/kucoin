@@ -65,7 +65,7 @@ async function cmcMetadata(symbol, contractAddr) {
 		qs = {
 			'address': contractAddr
 		};
-	}
+	} 
 	const requestOptions = {
 		method: 'GET',
 		uri: 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/info',

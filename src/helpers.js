@@ -59,6 +59,6 @@ const device = {
 		hasTouch: true,
 		isLandscape: false,
 	},
-};
+}; 
 
 module.exports = { device, r, log, logD, logT, logH, r15, r23, r58 }; //timeNow,timeFin

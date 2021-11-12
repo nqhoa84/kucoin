@@ -12,7 +12,7 @@ module.exports.Coin = class Coin {
     }
 
 }
-
+ 
 
 module.exports.Platform = class Platform {
     constructor(cmcData) {
