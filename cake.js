@@ -26,7 +26,7 @@ const { Coin } = require('./src/classes/Coin');
 const logger = winston.createLogger({
     format: winston.format.combine(
         winston.format.label({ label: 'Demo' }),
-        winston.format.timestamp({ format: 'YYYY/MM/DD HH:mm:ss' }),
+        winston.format.timestamp({ format: 'YYYY/MM/DD HH:mm:ss.SSS' }),
         winston.format.printf(info => `[${info.timestamp}] ${info.label} ${info.level}: ${info.message}`)
     ),
     transports: [
@@ -58,10 +58,16 @@ async function check4newArticleCake() {
     logger.info(`Open Cake page`);
 
     const browser = await puppeteer.launch({ headless: true });
+    logger.info(`Browser launched`);
     const page = await browser.newPage();
+    logger.info(`Browser newpage launched`);
     await page.goto('https://pancakeswap.finance/voting', {
         waitUntil: 'networkidle2'
+    }).catch(()=>{
+        logger.error(`Browser newpage ERROR`);
+        console.error(`Browser newpage ERROR`);
     });
+    logger.info(`Voting launched`);
 
     await page.waitForXPath('//a[@class="sc-cKhgmI faEXBW"]', {
         timeout: 10000,

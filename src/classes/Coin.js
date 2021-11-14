@@ -8,7 +8,8 @@ module.exports.Coin = class Coin {
         if(cmcData.urls) {
             this.websites = cmcData.urls.website;
         }
-        this.platform = cmcData.platform;
+        this.contract_address = cmcData.contract_address;
+        this.category = cmcData.category;
     }
 
 }
@@ -16,10 +17,13 @@ module.exports.Coin = class Coin {
 
 module.exports.Platform = class Platform {
     constructor(cmcData) {
-        /** {number}: id */
-        this.id = cmcData.id;
-        this.name = cmcData.name;
-        this.symbol = cmcData.symbol;
-        this.token_address = cmcData.token_address;
+        if(cmcData) {
+            /** {number}: id */
+            this.id = cmcData.id;
+            this.name = cmcData.name;
+            this.symbol = cmcData.symbol;
+            this.slug = cmcData.slug;
+            this.token_address = cmcData.token_address;
+        }
     } 
 }

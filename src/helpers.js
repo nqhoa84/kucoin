@@ -1,7 +1,7 @@
 const fs = require('fs');
 const r23 = r(2000, 3000);
 const r58 = r(5000, 8000);
-const r15 = r(1000, 15000);
+const r15 = r(1000, 5000);
 
 function r(min, max) {
 	return ~~(Math.random() * (max - min) + min);

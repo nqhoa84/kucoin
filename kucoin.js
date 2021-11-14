@@ -26,7 +26,7 @@ const { Coin } = require('./src/classes/Coin');
 const logger = winston.createLogger({
 	format: winston.format.combine(
 		winston.format.label({ label: 'Demo' }),
-		winston.format.timestamp({ format: 'YYYY/MM/DD HH:mm:ss' }),
+		winston.format.timestamp({ format: 'YYYY/MM/DD HH:mm:ss.SSS' }),
 		winston.format.printf(info => `[${info.timestamp}] ${info.label} ${info.level}: ${info.message}`)
 	),
 	transports: [
