@@ -21,7 +21,7 @@ const filePath = path.join(__dirname, 'dbcmc/data.txt');
 const winston = require('winston');
 const CntUtils = require('./src/CntUtils');
 const { exit } = require('process');
-const { Coin } = require('./src/classes/Coin');
+const { CmcCoin } = require('./src/classes/CmcCoin');
 
 const logger = winston.createLogger({
     format: winston.format.combine(
@@ -48,6 +48,7 @@ let nowStr = new Date().toLocaleString().replace(/[^a-zA-Z0-9]/g, "_");
 
 // console.log(fs.readJSONSync(filePath));
 console.log(CntUtils.cmcFindCoinsByAddr('usdt', tokenAddr='0x55d398326f99059ff775485246999027b3197955'));
+console.log(CntUtils.cmcFindCoins('usdt', website='https://tether.to'));
 // CntUtils.cmcMetadata('USDC,USDT');
 // exit(1);
 if (false) {
@@ -83,19 +84,19 @@ if (false) {
         // console.log(res);
         let allC = [];
         for (const c of res.data) {
-            let myC = new Coin(c)
+            let myC = new CmcCoin(c)
             allC.push(myC);
         }
         console.log(`CntUtils.cmcListing allc lenth ${allC.length}`);
         CntUtils.cmcListing(5001, 5000).then(res => {
             for (const c of res.data) {
-                let myC = new Coin(c)
+                let myC = new CmcCoin(c)
                 allC.push(myC);
             }
             console.log(`CntUtils.cmcListing allc lenth ${allC.length}`);
             CntUtils.cmcListing(10001, 5000).then(res => {
                 for (const c of res.data) {
-                    let myC = new Coin(c)
+                    let myC = new CmcCoin(c)
                     allC.push(myC);
                 }
                 console.log(`CntUtils.cmcListing allc lenth ${allC.length}`);

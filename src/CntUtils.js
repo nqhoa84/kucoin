@@ -1,10 +1,13 @@
 const rp = require('request-promise');
-const { Coin, Platform } = require('./classes/Coin');
+const { CmcCoin, Platform } = require('./classes/CmcCoin');
 const path = require('path');
+const open = require('open');
 const fs = require('fs-extra');
 const cmcDataPath = path.join(__dirname, '../dbcmc/data.txt');
 const allCoinCmc = fs.readJSONSync(cmcDataPath);
-
+const { Telegraf } = require('telegraf');
+const bot = new Telegraf('2118136589:AAF8y223Y1-TufaZhg5k0-3-tCmAazkz224');
+const botChatId = '-684583993';
 //*/
 /**
  * Parse kucoin article header and return {link, token's ticker}
@@ -84,7 +87,7 @@ async function cmcMetadata(symbol, contractAddr) {
 	let res = await rp(requestOptions);
 	if (res && res.data) {
 		// console.log(res);
-		return new Coin(res.data[symbol]);
+		return new CmcCoin(res.data[symbol]);
 	}
 }
 
@@ -179,10 +182,10 @@ module.exports.parseBncArticle = function parseBncArticle(title) {
  * Example: "BTC,ETH". At least one "id" or "slug" or "symbol" is required for this request.
  * @param {string} ids, separated by comma ","  
  */
- module.exports.cmcMetadataIds = async function cmcMetadataIds(ids) {
+module.exports.cmcMetadataIds = async function cmcMetadataIds(ids) {
 	let qs = {
 		'id': ids
-	};  
+	};
 	const requestOptions22 = {
 		method: 'GET',
 		uri: 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/info',
@@ -198,59 +201,100 @@ module.exports.parseBncArticle = function parseBncArticle(title) {
 	if (res && res.data) {
 		let idList = ids.split(",");
 		for (const id of idList) {
-			re.push(new Coin(res.data[`${id}`]));
+			re.push(new CmcCoin(res.data[`${id}`]));
 		}
 	}
 	return re;
 }
 
 /**
- * return list of Coins
+ * 
+ * @param {string} slug Must be lowercase 
+ * @returns 
+ */
+module.exports.cmcMetadataBySlug = async function cmcMetadataBySlug(slug) {
+	const requestOptions = {
+		method: 'GET',
+		uri: 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/info',
+		qs: { 'slug': slug },
+		headers: {
+			'X-CMC_PRO_API_KEY': cmcApiKey
+		},
+		json: true,
+		gzip: true
+	};
+
+	let res = await rp(requestOptions);
+	// console.log(res);
+	if (res && res.data) {
+		let allK = Object.keys(res.data);
+		if(allK.length > 0) {
+			// console.log(res);
+			return new CmcCoin(res.data[Object.keys(res.data)[0]]);
+		}
+	}
+}
+
+
+/**
+ * Search on global list {allCoinCmc} and return list of Coins
  * @param {string} symbol 
  */
- module.exports.cmcFindCoins = function cmcFindCoins(symbol, website) {
+module.exports.cmcFindCoins = function cmcFindCoins(symbol, website) {
 	let re = [];
 	// console.log(allCoinCmc);
-	if(allCoinCmc) {
+	if (allCoinCmc) {
 		allCoinCmc.forEach(c => {
-			if(c.symbol.toUpperCase() == symbol.toUpperCase()) {
-				re.push(c); 
+			if (c.symbol.toUpperCase() == symbol.toUpperCase()) {
+				re.push(c);
 			}
 		});
 	}
 
-	if(website && website.trim() != '') {
-		console.log("aksdfjdlf)");
+	if (website) {
 		let reW = [];
+		// console.log(12345465);
 		re.forEach(c => {
-			if(c.website && c.website.toLowerCase() == website.toLowerCase()){
-				reW.push(c);
+			if (c.websites) {
+				// console.log(c.websites);
+				c.websites.forEach(w => {
+					// console.log(w);
+					if (equalStringIgnoreCase(w, website)) {
+						reW.push(c);
+					}
+				});
 			}
 		});
 		re = reW;
-	} 
-	return re; 
+	}
+	return re;
 }
 
+/**
+ * Search on global list {allCoinCmc} and return list of Coins
+ * @param {string} symbol 
+ * @param {string} tokenAddr 
+ * @returns list of coin object
+ */
 module.exports.cmcFindCoinsByAddr = function cmcFindCoins(symbol, tokenAddr) {
-	
+
 	let re = [];
 	// console.log(allCoinCmc);
-	if(allCoinCmc) {
+	if (allCoinCmc) {
 		allCoinCmc.forEach(c => {
-			if(c.symbol.toUpperCase() == symbol.toUpperCase()) {
-				re.push(c); 
+			if (c.symbol.toUpperCase() == symbol.toUpperCase()) {
+				re.push(c);
 			}
 		});
 	}
-	
-	if(tokenAddr) {
+
+	if (tokenAddr) {
 		let reToken = [];
 		re.forEach(c => {
-			if(c.contract_address){
+			if (c.contract_address) {
 				c.contract_address.forEach(a => {
 					// console.log(a);
-					if(equalStringIgnoreCase(a.contract_address, tokenAddr)){
+					if (equalStringIgnoreCase(a.contract_address, tokenAddr)) {
 						reToken.push(c);
 					}
 				});
@@ -258,11 +302,47 @@ module.exports.cmcFindCoinsByAddr = function cmcFindCoins(symbol, tokenAddr) {
 		});
 		re = reToken;
 	}
-	
-	return re; 
+
+	return re;
 }
 
-module.exports.createBscPlatform = function createBSCplatform(tokenAddr){
+/**
+ * string: Alternatively pass one or more comma-separated cryptocurrency symbols. 
+ * Example: "BTC,ETH". At least one "id" or "slug" or "symbol" is required for this request.
+ * @param {string} symbol Must be uppercase
+ * @param {string} contractAddr 
+ */
+async function cmcMetadata(symbol, contractAddr) {
+	let qs;
+	if (symbol) {
+		qs = {
+			'symbol': symbol
+		};
+	} else if (contractAddr) {
+		qs = {
+			'address': contractAddr
+		};
+	}
+	const requestOptions = {
+		method: 'GET',
+		uri: 'https://pro-api.coinmarketcap.com/v1/cryptocurrency/info',
+		qs: qs,
+		headers: {
+			'X-CMC_PRO_API_KEY': cmcApiKey
+		},
+		json: true,
+		gzip: true
+	};
+
+	let res = await rp(requestOptions);
+	if (res && res.data) {
+		// console.log(res);
+		return new CmcCoin(res.data[symbol]);
+	}
+}
+
+
+module.exports.createBscPlatform = function createBSCplatform(tokenAddr) {
 	let p = new Platform();
 	p.id = 1839;
 	p.slug = 'binance-coin';
@@ -270,7 +350,7 @@ module.exports.createBscPlatform = function createBSCplatform(tokenAddr){
 	return p;
 }
 
-module.exports.createEthereumPlatform = function createBSCplatform(tokenAddr){
+module.exports.createEthereumPlatform = function createBSCplatform(tokenAddr) {
 	let p = new Platform();
 	p.id = 1027;
 	p.slug = 'ethereum';
@@ -285,6 +365,60 @@ module.exports.createEthereumPlatform = function createBSCplatform(tokenAddr){
  * @returns 
  */
 function equalStringIgnoreCase(str1, str2) {
-	return str1 && str2 
-	&& str1.trim().toLowerCase() == str2.trim().toLowerCase();
+	return str1 && str2
+		&& str1.trim().toLowerCase() == str2.trim().toLowerCase();
 }
+
+/**
+ * For each contract in params, Open poocoin, pancakeswap and 1inch with that address
+ * @param {string} contractAddrs list of contract in one string, separated by comma ','
+ */
+module.exports.openPooBsc = function openPooBsc(contractAddrs) {
+	try {
+		let ads = contractAddrs.split(",");
+		ads.forEach(element => {
+			if (element.length >= 40) {
+				open(`https://poocoin.app/tokens/${element}`);
+				open(`https://pancakeswap.finance/swap?outputCurrency=${element}`);
+				open(`https://app.1inch.io/#/56/swap/BNB/${element}`);
+			}
+		});
+	} catch (error) {
+		//logger.error(error);
+		console.error(error);
+	}
+}
+module.exports.sendTele = function sendTele(msg) {
+	bot.telegram.sendMessage(botChatId, msg).catch(reason => {
+		console.error(reason);
+	});
+}
+
+/**
+ * 
+ * @param {*} msg Should be string
+ * @param {*} logger if logger exist it will log with info level
+ */
+module.exports.consoleLogWithTime = function consoleLogWithTime(msg, logger) {
+	console.log(`${new Date().toLocaleString()}: ${msg}`);
+	if (logger) {
+		logger.info(msg);
+	}
+}
+
+/**
+	 * 
+	 * @param {Array} lst 
+	 * @param {*} item 
+	 */
+module.exports.isListContainItem = function isListContainItem(lst, item) {
+	if (lst) {
+		for (const i of lst) {
+			if (i == item) {
+				return true;
+			}
+		}
+	}
+	return false;
+}
+

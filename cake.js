@@ -21,7 +21,8 @@ const filePath = path.join(__dirname, 'sound.mp3');
 const winston = require('winston');
 const CntUtils = require('./src/CntUtils');
 const { exit } = require('process');
-const { Coin } = require('./src/classes/Coin');
+const { Coin } = require('./src/classes/CmcCoin');
+const { sleep } = require('sleep');
 
 const logger = winston.createLogger({
     format: winston.format.combine(
@@ -47,8 +48,15 @@ schedule.scheduleJob({ second: [0, 20, 40] }, async () => {
     } else {
         isCakeRunning = true;
         console.log('V1.2 CAKE on ' + new Date().toLocaleString());
-
-        await check4newArticleCake();
+        try {
+            await check4newArticleCake();   
+            
+        } catch (error) {
+            logger.error(error);
+            
+            sleep(60);
+        }
+        
         isCakeRunning = false;
     }
 });
@@ -63,23 +71,26 @@ async function check4newArticleCake() {
     logger.info(`Browser newpage launched`);
     await page.goto('https://pancakeswap.finance/voting', {
         waitUntil: 'networkidle2'
-    }).catch(()=>{
-        logger.error(`Browser newpage ERROR`);
-        console.error(`Browser newpage ERROR`);
-    });
+    })
+    // .catch(()=>{
+    //     logger.error(`Browser newpage ERROR`);
+    //     console.error(`Browser newpage ERROR`);
+    // })
+    ;
     logger.info(`Voting launched`);
 
-    await page.waitForXPath('//a[@class="sc-cKhgmI faEXBW"]', {
+    await page.waitForXPath('//a[@class="sc-cocPPp hUIJfl"]', {
         timeout: 10000,
         visible: true
     }).then(() => {
         console.log('Got it on ' + new Date().toLocaleString());
-    }).catch(() => {
+    }).catch((reason) => {
+        console.log(reason);
         console.log('No vote avaliable');
     });
 
     const items = await page.evaluate(() => {
-        let items = document.querySelectorAll('a[class="sc-cKhgmI faEXBW"]');
+        let items = document.querySelectorAll('a[class="sc-cocPPp hUIJfl"]');
         let links = [];
         for (let item of items) {
             links.push(item.getAttribute('href'));
@@ -89,8 +100,10 @@ async function check4newArticleCake() {
 
     logger.info(`cake, total links=${items.length}`);
 
-    let played = false, openCmc = false;
+    let played = false, openCmc = false, teleSent = false;
     for (let link of items) {
+        console.log(link);
+        continue;
         try {
             await db.get(link);
         } catch {
@@ -104,7 +117,11 @@ async function check4newArticleCake() {
             played = true;
 
             logger.info(`{new vote} on Cake ${url}`);
-            bot.telegram.sendMessage(botChatId, `{new vote} on Cake ${url}`);
+            if(teleSent == false) {
+                bot.telegram.sendMessage(botChatId, `{new vote} on Cake ${url}`);
+                teleSent = true;
+            }
+            
 
             await page.goto(url, {
                 waitUntil: 'networkidle2'
