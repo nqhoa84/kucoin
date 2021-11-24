@@ -5,9 +5,12 @@ const open = require('open');
 const fs = require('fs-extra');
 const cmcDataPath = path.join(__dirname, '../dbcmc/data.txt');
 const allCoinCmc = fs.readJSONSync(cmcDataPath);
-const { Telegraf } = require('telegraf');
-const bot = new Telegraf('2118136589:AAF8y223Y1-TufaZhg5k0-3-tCmAazkz224');
-const botChatId = '-684583993';
+const { Telegraf } = require('telegraf'); 
+const teleObj = require('../cfg/tele')
+const bot = new Telegraf(teleObj.teleBotToken);
+const botChatId = teleObj.teleBotChatId;
+//Test
+// const botChatId = '-759160679';
 //*/
 /**
  * Parse kucoin article header and return {link, token's ticker}
@@ -127,27 +130,97 @@ module.exports.parseCakeTitle = function parseCakeTitle(title, content) {
 	start = cnt.lastIndexOf('FOOD POISONING');
 	if (start > 0) {
 		cnt = content.substring(start).toLowerCase();
-		start = cnt.lastIndexOf('https://www.bscscan.com/token/');
-		if (start > 0 && cnt.length > start + 30 + 42) {
-			contractAddr = cnt.substring(start + 30, start + 30 + 42);
-		}
+		let strs = cnt.split('bscscan.com/token/');
+		strs.forEach(e => {
+			if(e.startsWith('0x')) {
+				let addr = e.substring(0, 42); 
+				if (contractAddr.indexOf(addr) < 0) {
+					contractAddr += `${addr},`
+				}
+			}
+		}); 
 	}
 
 	if (contractAddr == '') {
-		let ar = content.toLowerCase().split(`https://www.bscscan.com/token/`);
-		if (ar) {
-			ar.forEach(element => {
-				if (element.startsWith('0x') && element.length >= 42) {
-					let newA = element.substring(0, 41);
-					if (contractAddr.indexOf(newA) < 0) {
-						contractAddr += `${element.substring(0, 41)},`
-					}
+		let strs = content.toLowerCase().split('bscscan.com/token/');
+		strs.forEach(e => {
+			if(e.startsWith('0x')) {
+				let addr = e.substring(0, 42); 
+				if (contractAddr.indexOf(addr) < 0) {
+					contractAddr += `${addr},`
 				}
-			});
-		}
+			}
+		}); 
+	} else {
+		console.log('can not find contract address.');
 	}
 
 	return { symbol, contractAddr }
+}
+
+/**
+ * Parse cake vote content to get coin symbol and contract address.
+ * @param {string} full Full vote content in html code. 
+ */
+ module.exports.parseCakeFullArticle = function parseCakeFullArticle(full) {
+	let bdStart = full.indexOf(`<body`);
+	let bdEnd = full.indexOf(`</body`);
+	if(bdStart > 0 && bdEnd > bdStart) {
+		full = full.substring(bdStart, bdEnd);
+	}
+	
+	let symbol = '';
+	let contractAddr = '';
+	// let full = full;
+	let start = full.indexOf('(');
+	let end = full.indexOf(')');
+	if (start > 0 && end > start) {
+		symbol = full.substring(start + 1, end).trim();
+	} else {
+		let t2 = full.toUpperCase();
+		end = t2.indexOf('-BNB');
+		if (end <= 0) {
+			end = t2.indexOf('-BUSD');
+		}
+		if (end > 0) {
+			start = t2.substring(0, end).lastIndexOf(' ');
+		}
+		if (start > 0 && end > start) {
+			symbol = full.substring(start, end).trim();
+		}
+	}
+
+	
+	let cnt = full.toUpperCase();
+	start = cnt.lastIndexOf('FOOD POISONING');
+	if (start > 0) {
+		cnt = full.substring(start).toLowerCase();
+		let strs = cnt.split('bscscan.com/token/');
+		strs.forEach(e => {
+			if(e.startsWith('0x')) {
+				let addr = e.substring(0, 42); 
+				if (contractAddr.indexOf(addr) < 0) {
+					contractAddr += `${addr},`
+				}
+			}
+		}); 
+	}
+
+	if (contractAddr == '') {
+		let strs = full.toLowerCase().split('bscscan.com/token/');
+		strs.forEach(e => {
+			if(e.startsWith('0x')) {
+				let addr = e.substring(0, 42); 
+				if (contractAddr.indexOf(addr) < 0) {
+					contractAddr += `${addr},`
+				}
+			}
+		}); 
+	} else {
+		this.consoleLogWithTime('can not find contract address.');
+	}
+
+	return { symbol, contractAddr };
 }
 
 /**
@@ -228,17 +301,17 @@ module.exports.cmcMetadataBySlug = async function cmcMetadataBySlug(slug) {
 	// console.log(res);
 	if (res && res.data) {
 		let allK = Object.keys(res.data);
-		if(allK.length > 0) {
+		if (allK.length > 0) {
 			// console.log(res);
 			return new CmcCoin(res.data[Object.keys(res.data)[0]]);
 		}
 	}
 }
-
-
+ 
 /**
- * Search on global list {allCoinCmc} and return list of Coins
+ * Search on global list {allCoinCmc} and return list of CmcCoins
  * @param {string} symbol 
+ * @returns List of CmcCoins, empty list if can not found.
  */
 module.exports.cmcFindCoins = function cmcFindCoins(symbol, website) {
 	let re = [];
@@ -271,39 +344,28 @@ module.exports.cmcFindCoins = function cmcFindCoins(symbol, website) {
 }
 
 /**
- * Search on global list {allCoinCmc} and return list of Coins
- * @param {string} symbol 
- * @param {string} tokenAddr 
- * @returns list of coin object
+ * Search on global list {allCoinCmc} and return list of Coins 
+ * @param {string} tokenAddr ONE address
+ * @returns List of CmcCoins, empty list if can not found.
  */
-module.exports.cmcFindCoinsByAddr = function cmcFindCoins(symbol, tokenAddr) {
-
-	let re = [];
-	// console.log(allCoinCmc);
-	if (allCoinCmc) {
+module.exports.cmcFindCoinsByAddr = function cmcFindCoinsByAddr(tokenAddr) { 
+	
+	let reToken = [];
+	if (tokenAddr) { 
+		let addr = tokenAddr.trim().replace(/[^a-zA-Z0-9]/g, "");
 		allCoinCmc.forEach(c => {
-			if (c.symbol.toUpperCase() == symbol.toUpperCase()) {
-				re.push(c);
-			}
-		});
-	}
-
-	if (tokenAddr) {
-		let reToken = [];
-		re.forEach(c => {
 			if (c.contract_address) {
 				c.contract_address.forEach(a => {
 					// console.log(a);
-					if (equalStringIgnoreCase(a.contract_address, tokenAddr)) {
+					if (equalStringIgnoreCase(a.contract_address, addr)) {
 						reToken.push(c);
 					}
 				});
 			}
-		});
-		re = reToken;
+		}); 
 	}
 
-	return re;
+	return reToken;
 }
 
 /**
@@ -388,9 +450,12 @@ module.exports.openPooBsc = function openPooBsc(contractAddrs) {
 		console.error(error);
 	}
 }
-module.exports.sendTele = function sendTele(msg) {
+module.exports.sendTele = function sendTele(msg, logger) {
 	bot.telegram.sendMessage(botChatId, msg).catch(reason => {
 		console.error(reason);
+		if (logger) {
+			logger.error(reason);
+		}
 	});
 }
 
@@ -421,4 +486,3 @@ module.exports.isListContainItem = function isListContainItem(lst, item) {
 	}
 	return false;
 }
-

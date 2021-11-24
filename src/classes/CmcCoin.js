@@ -47,10 +47,12 @@ module.exports.CmcCoin = class CmcCoin {
 
     getBscTokenAddress2() {
         let re = '';
-        if(this.contract_address && this.contract_address.platform) {
-            if(this.contract_address.platform.name == 'Avalanche') {
-                return `${this.contract_address.contract_address}`;
-            }
+        if(this.contract_address) {
+            for (const ca of this.contract_address) {
+                if(ca.platform && ca.platform.name == 'Binance Smart Chain (BEP20)') {
+                    re = ca.contract_address;
+                }
+            } 
         }
         return re;
     }
