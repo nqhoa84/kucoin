@@ -5,10 +5,6 @@ const open = require('open');
 const fs = require('fs-extra');
 const cmcDataPath = path.join(__dirname, '../../dbcmc/data.txt');
 const allCoinCmc = fs.readJSONSync(cmcDataPath);
-const { Telegraf } = require('telegraf');
-const teleObj = require('../../cfg/tele')
-const bot = new Telegraf(teleObj.teleBotToken);
-const botChatId = teleObj.teleBotChatId;
 
 const cmcApiKey = `fdd2339e-1241-4b84-8cdf-be2c13881484`;
 /**

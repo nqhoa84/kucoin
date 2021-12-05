@@ -8,7 +8,7 @@
  */
 
 const fallingCoin = true;
-const thres1H = -10
+const thres1H = -10, minVol24h = 1000000, minFDV = 1000000;
 const chains = [`bsc`]
 const loadAllCmcCoins = false;
 
@@ -32,7 +32,8 @@ const logger = winston.createLogger({
 
 let currFallCoins = [];
 CntUtils.consoleLogWithTime(`Started`, logger);
-CntUtils.sendTele(`Start bắt dao rơi, thres1H = ${thres1H}%, chains = ${chains}`);
+// CmcUtil.cmcGainerLosers().then(console.log);
+CntUtils.sendTele(`Start bắt dao rơi, thres1H = ${thres1H}%, chains = ${chains}, minVol24h = ${minVol24h}, minFDV = ${minFDV}`);
 
 async function main(params) {
     CntUtils.consoleLogWithTime(`CMC falling coins monitoring`); 
@@ -53,7 +54,8 @@ async function main(params) {
                             break;
                         }
                     }
-                    if(chainOK == true) {
+                    if(chainOK == true && c.quote.USD.volume_24h && c.quote.USD.volume_24h > minVol24h
+                        && c.quote.USD.fully_diluted_market_cap > minFDV) {
                         newFallings.push(c);
                     }
                 }
@@ -73,8 +75,13 @@ async function main(params) {
                         }
                     }
                     if(exist == false) {
+                        let change1h = Math.round(c.quote.USD.percent_change_1h * 10) / 10;
+                        let change24h = Math.round(c.quote.USD.percent_change_24h * 10) / 10;
+                        let vol24h = Math.round(c.quote.USD.volume_24h);
+                        let fdv = Math.round(c.quote.USD.fully_diluted_market_cap);
+                        let mc = Math.round(c.quote.USD.market_cap);
                         CntUtils.consoleLogWithTime(`Falling found: ${c.slug} 1h -${c.quote.USD.percent_change_1h}%`);
-                        CntUtils.sendTele(`new drop ${c.name}-${c.symbol}: 1h -${c.quote.USD.percent_change_1h}% 24h -${c.quote.USD.percent_change_24h}% 
+                        CntUtils.sendTele(`new drop ${c.name}(${c.symbol}), 1h: ${change1h}%, 24h: ${change24h}%, Vol: ${vol24h}, FDV:${fdv}, MC:${mc}
                         https://coinmarketcap.com/currencies/${c.slug}
                         `);
                     }

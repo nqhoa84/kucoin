@@ -2,7 +2,7 @@
   "name": "cex-listing",
   "version": "1.1.0",
   "description": "",
-  "main": "newAdded.js",
+  "main": "cake.js",
   "scripts": {
     "start": "node .",
     "schedule": "node schedule.js"

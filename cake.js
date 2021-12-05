@@ -128,28 +128,7 @@ async function check4newArticleCake() {
                 });
                 CntUtils.consoleLogWithTime(`Full content loaded`);
                 let { symbol, contractAddr } = CntUtils.parseCakeFullArticle(fullArticle);
-
-                // await page.waitForXPath('//body', {
-                //     timeout: 10000,
-                //     visible: true
-                // }).then(() => {
-                //    CntUtils.consoleLogWithTime('Got content ' + url, logger);
-                // }).catch((reason) => {
-                //     CntUtils.consoleLogWithTime(`No content avaliable ${reason}`);
-                // });
-
-                // let data = await page.evaluate(() => { 
-                //     let slug = document.querySelector('body').querySelector('h1[class="sc-gtsrHT sc-kLojOw emWolE hwBXuG"]').textContent;
-                //     let title = document.querySelector('div[class="sc-jSFjdj gSuCSO"]').querySelector('h1[class="sc-gtsrHT sc-kLojOw emWolE hwBXuG"]').outerHTML;
-                //     let content = document.querySelector('div[class="sc-jSFjdj gSuCSO"]').querySelector('div[class="sc-jSFjdj kJmatq"]').innerHTML;
-                //     return {
-                //         slug: slug,
-                //         title: title,
-                //         content: content
-                //     };
-                // });
-
-                // let { symbol, contractAddr } = CntUtils.parseCakeTitle(data.title, data.content);
+                
                 CntUtils.consoleLogWithTime(`symbol: ${symbol} contract: ${contractAddr}`);
                 openPoo(contractAddr);
 
