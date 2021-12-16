@@ -34,17 +34,18 @@ const cgClient = new CoinGecko();
 
 async function main(params) {
     CntUtils.consoleLogWithTime(`new added coin monitoring.`);
-    let nc = await CntUtils.cmcMetadataBySlug('plateau-finance');
-    console.log(nc);
+    // let nc = await CntUtils.cmcMetadataBySlug('baby-meta');
+    // console.log(nc);
+    // console.log(nc.getBscTokenAddress2());
 }
 main();
 
 
-let isCgRunning = true;
+let isCgRunning = false;
 let allCoins;
-schedule.scheduleJob({ second: [52] }, async () => {
+schedule.scheduleJob({ second: [22, 52] }, async () => {
     if (isCgRunning) {
-        CntUtils.consoleLogWithTime('CGC running...');
+        CntUtils.consoleLogWithTime('CGC running...', logger);
         return;
     }
     isCgRunning = true;
@@ -54,7 +55,7 @@ schedule.scheduleJob({ second: [52] }, async () => {
         let nowAllC;
         if (res && res.success == true) {
             nowAllC = res.data;
-            CntUtils.consoleLogWithTime(`All coins size = ${nowAllC.length}`);
+            CntUtils.consoleLogWithTime(`All coins size = ${nowAllC.length}`, logger);
             // console.log(nowAllC);
         }
         if (!allCoins) {
@@ -152,7 +153,7 @@ schedule.scheduleJob({ second: [27, 57] }, async () => {
 
         } catch (error) {
             logger.error(error);
-
+            CntUtils.sendTele(`error getting data from CMC`);
             sleep.sleep(60);
         }
 
@@ -216,45 +217,40 @@ async function check4newAddedCmc() {
         return links;
     });
 
-    logger.info(`CMC new added, total links=${items.length}`);
+    CntUtils.consoleLogWithTime(`CMC new added, total links=${items.length}`, logger);
 
-    if (allNewAddedCmc.length == 0 && false) {
-        for (const link of items) {
-            allNewAddedCmc.push(link);
-        }
+    if (allNewAddedCmc.length == 0) {
+        allNewAddedCmc = items;
     } else {
-        let played = false, openCmc = false, teleSent = false;
         for (let it of items) {
             // console.log(it);
             // continue;
-            if(CntUtils.isListContainItem(allNewAddedCmc, it) == false && played == false) {
-                played = true;
+            if(CntUtils.isListContainItem(allNewAddedCmc, it) == false) {
+                allNewAddedCmc.push(it);
                 let strs = it.split(`,zzz,`);
                 let link = strs[0];
                 let slug = link.split(`/`)[2];
                 let symbol = strs[1];
                 let url = `https://coinmarketcap.com${link}`;
-                CntUtils.consoleLogWithTime(`link ${link} slug ${slug} symbol ${symbol} url ${url}`);
+                CntUtils.consoleLogWithTime(`link ${link} slug ${slug} symbol ${symbol} url ${url}`, logger);
                 let nc = await CntUtils.cmcMetadataBySlug(slug);
                 // console.log(nc);
                 if(nc){
-                    console.log('--------------' + nc.getBscTokenAddress2());
-                    // CntUtils.openPooBsc(nc.getBscTokenAddress());
+                    let tokenAddr = nc.getBscTokenAddress2();
+                    if(tokenAddr && tokenAddr.length > 0) {
+                        CntUtils.openPooBsc(tokenAddr); 
+                    }
                     let teleLikn = nc.getTelegroupUrl2();
-                    console.log('asdfasdfdsf' + teleLikn);
                     open(teleLikn);
-                } else {
-                    console.log('asdfasdfdsf');
-                    console.log(nc);
                 }
-                console.log('asdfasdfdsf' + url);
                 open(url); //open cmc link
-                // break;
+                sound.play(filePath).catch(() => { });
+                CntUtils.sendTele(`new CMC added, ${url}`);
+                sleep.sleep(r15/1000);
             } 
         }
-
+        // allNewAddedCmc = items;
     }
-
 
     await browser.close(); 
 
